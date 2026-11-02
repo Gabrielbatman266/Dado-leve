@@ -345,7 +345,7 @@ if(!save.combos) save.combos=[
 ];
 const cfg=save.cfg;
 if(!cfg.v2){cfg.shake=false;cfg.v2=1;}
-const VERSAO='1.3';
+const VERSAO='1.4';
 let persistT=0;
 function persist(){clearTimeout(persistT);persistT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){}},250);}
 
@@ -878,8 +878,10 @@ function stepSnap(d,dt){
   const e=S.t*S.t*(3-2*S.t);
   d.q=qSlerp(S.a,S.b,e);
   let minY=1e9;for(const v of d.verts){const y=qRot(d.q,v)[1];if(y<minY)minY=y;}
-  d.p[1]-=minY*Math.min(1,dt*18+e*e);keepInside(d);
-  if(S.t>=1){d.p[1]-=minY;d.snap=null;d.sleep=true;d.v=[0,0,0];d.w=[0,0,0];readValue(d);if(d.p[1]>d.R*.4)clack(.25,0);}
+  // minY é relativo ao centro: a altura do ponto mais baixo no mundo é p+minY; desce até o chão
+  const low=d.p[1]+minY;
+  d.p[1]-=low*Math.min(1,dt*18+e*e);keepInside(d);
+  if(S.t>=1){d.p[1]=-minY;d.snap=null;d.sleep=true;d.v=[0,0,0];d.w=[0,0,0];readValue(d);if(d.p[1]>d.R*.4)clack(.25,0);}
 }
 function keepInside(d){
   // rede de segurança: nada sai da mesa, nem empurrado por outro dado
