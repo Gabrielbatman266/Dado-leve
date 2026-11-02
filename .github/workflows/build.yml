@@ -1,0 +1,44 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compilar APK
+        run: gradle :app:assembleRelease --no-daemon
+
+      - name: Renomear
+        run: cp app/build/outputs/apk/release/app-release.apk DadoLeve.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DadoLeve-apk
+          path: DadoLeve.apk
+
+      - name: Publicar na release "latest"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest DadoLeve.apk \
+            --title "Dado Leve (última versão)" \
+            --notes "APK gerado automaticamente do commit ${GITHUB_SHA::7}. Baixe o DadoLeve.apk e instale no celular."
